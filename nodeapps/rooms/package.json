@@ -1,0 +1,9 @@
+{
+  "name": "socket-room-example",
+  "version": "0.0.1",
+  "description": "a socket.io room app",
+  "dependencies": {
+    "express": "^4.16.4",
+    "socket.io": "^2.2.0"
+  }
+}

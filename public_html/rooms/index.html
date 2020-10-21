@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO rooms</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 84%; margin-right: .5%; }
+      form button { width: 15%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+	  #room { background: #798EB8; padding: 3px; position: fixed; font-size:20px; top: 0; width: 100%; color: #fff; }
+		
+      #messages { list-style-type: none; margin: 40px 0 0 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+	  #room-list { list-style-type: none; margin: 40px 0 0 0; padding: 0; }
+      #room-list li { padding: 5px 10px; }
+      #room-list li:nth-child(odd) { background: #eee; }
+	  .msgs{ display: none; }
+		.rooms{ display: none; }
+    </style>
+	  
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+	
+	<script>
+	  $(function () {
+		const socket = io();
+		let room, name;
+		$('#name-form').submit(function(){
+		  name = $('#m1').val();
+		  socket.emit('set username', name);
+		  $('.name').hide();
+		  $('.rooms').show();
+		  $('#room').text(`Rooms - (${name})`);
+		  return false;
+		});
+		$('#room-form').submit(function(){
+		  room = $('#m2').val();
+		  socket.emit('new room', room );
+		  $('#m2').val('');
+		  $('.rooms').hide();
+		  $('.msgs').show();
+		  $('#room').text(room);
+		  return false;
+		});
+		$('#msg-form').submit(function(){
+		  socket.emit('chat message', { name, room, msg:$('#m3').val() });
+		  $('#m3').val('');
+		  return false;
+		});
+		socket.on('chat message', function(msg){
+      		$('#messages').append($('<li>').text(msg));
+    	});
+		socket.on('rooms', function(rooms){
+			try{
+				$('#room-list').html('');
+				if (rooms!==undefined && Object.getOwnPropertyNames(rooms).length>0){
+					for(let room in rooms){
+						const sockets = rooms[room];
+						let txt = `${room} - ` + sockets.join(', ');
+						let li = $('#room-list').append($('<li>').append($(`<a name="${room}">`).text(txt)));
+					}
+				}
+				$('#room-list a').click(function(){
+					console.log(`Room ${this.name} clicked.`);
+					socket.emit('join room', this.name);
+					room = this.name;
+					$('.rooms').hide();
+		  			$('.msgs').show();
+		  			$('#room').text(room);
+				});
+			}catch(e){
+				console.log("There was an error getting the room list");
+			}
+		});
+	  });
+	</script>
+  </head>
+  <body>
+	<div id="room">Rooms</div>
+	<form class="name" id="name-form">
+		<input id="m1" autocomplete="off" /><button>Enter a username</button>
+	</form>
+	<ul id="room-list" class="rooms"></ul>
+	<form class="rooms" id="room-form" action="">
+      <input id="m2" autocomplete="off" /><button>Create and join a new room</button>
+    </form>
+	<div>
+		<ul id="messages" class="msgs"></ul>
+		<form class="msgs" id="msg-form" action="">
+		  <input id="m3" autocomplete="off" /><button>Send</button>
+		</form>
+	</div>
+  </body>
+</html>
